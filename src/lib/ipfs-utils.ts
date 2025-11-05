@@ -1,10 +1,18 @@
 import { create, IPFSHTTPClient } from 'ipfs-http-client';
 
+import { Buffer } from 'buffer'; // <-- Add this import at the top
+
 // Use Infura IPFS gateway (replace with your project credentials)
+const PROJECT_ID = 'FIR'; // <-- This is the API Key / Project ID from the list
+const API_KEY_SECRET = 'JsBKAVNWhq5HfrUuuKGqaP45mHAAW48lP7sSwA5OC7ZAy0WxqUYtUg'; // <-- This is the secret from your last screenshot
+
 const IPFS_CONFIG = {
   host: 'ipfs.infura.io',
   port: 5001,
-  protocol: 'https' as const
+  protocol: 'https' as const,
+  headers: {
+    authorization: 'Basic ' + Buffer.from(PROJECT_ID + ':' + API_KEY_SECRET).toString('base64'),
+  },
 };
 
 // Public IPFS gateway for reading
