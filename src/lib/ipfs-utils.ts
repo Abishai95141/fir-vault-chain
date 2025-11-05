@@ -1,18 +1,11 @@
 import { create, IPFSHTTPClient } from 'ipfs-http-client';
+import { Buffer } from 'buffer';
 
-import { Buffer } from 'buffer'; // <-- Add this import at the top
-
-// Use Infura IPFS gateway (replace with your project credentials)
-const PROJECT_ID = '40879d2ea0884e3ea233a24c8211e5bc'; // <-- This is the API Key / Project ID from the list
-const API_KEY_SECRET = 'JsBKAVNWhq5HfrUuuKGqaP45mHAAW48lP7sSwA5OC7ZAy0WxqUYtUg'; // <-- This is the secret from your last screenshot
-
+// Use public IPFS node (no authentication required)
 const IPFS_CONFIG = {
-  host: 'ipfs.infura.io',
-  port: 5001,
+  host: 'ipfs.io',
+  port: 443,
   protocol: 'https' as const,
-  headers: {
-    authorization: 'Basic ' + Buffer.from(PROJECT_ID + ':' + API_KEY_SECRET).toString('base64'),
-  },
 };
 
 // Public IPFS gateway for reading
@@ -33,32 +26,46 @@ export const getIPFSClient = (): IPFSHTTPClient => {
 };
 
 export const uploadToIPFS = async (data: any): Promise<string> => {
+  // For testing, use local storage simulation
+  // In production, you'd use a proper IPFS service with API keys
   try {
-    const client = getIPFSClient();
-    const jsonData = JSON.stringify(data);
-    const result = await client.add(jsonData);
-    return result.cid.toString();
-  } catch (error) {
-    console.error('IPFS upload error:', error);
-    // For demo purposes, return a mock CID
-    const mockCID = `Qm${Math.random().toString(36).substring(2, 15)}`;
-    console.warn('Using mock CID for demo:', mockCID);
+    // Store data in localStorage with a unique key
+    const dataString = JSON.stringify(data);
+    const timestamp = Date.now();
+    const storageKey = `fir_data_${timestamp}`;
+    localStorage.setItem(storageKey, dataString);
+    
+    // Generate a deterministic CID-like hash
+    const mockCID = `Qm${btoa(storageKey).substring(0, 44)}`;
+    console.log('Stored FIR data with CID:', mockCID);
     return mockCID;
+  } catch (error) {
+    console.error('Storage error:', error);
+    throw new Error('Failed to store FIR data');
   }
 };
 
 export const uploadFileToIPFS = async (file: File): Promise<string> => {
   try {
-    const client = getIPFSClient();
-    const fileBuffer = await file.arrayBuffer();
-    const result = await client.add(new Uint8Array(fileBuffer));
-    return result.cid.toString();
-  } catch (error) {
-    console.error('IPFS file upload error:', error);
-    // For demo purposes, return a mock CID
-    const mockCID = `Qm${Math.random().toString(36).substring(2, 15)}${file.name}`;
-    console.warn('Using mock CID for file:', mockCID);
+    // Convert file to base64 and store in localStorage
+    const reader = new FileReader();
+    const base64Promise = new Promise<string>((resolve, reject) => {
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+    
+    const base64Data = await base64Promise;
+    const timestamp = Date.now();
+    const storageKey = `fir_file_${timestamp}_${file.name}`;
+    localStorage.setItem(storageKey, base64Data);
+    
+    const mockCID = `Qm${btoa(storageKey).substring(0, 40)}${file.name}`;
+    console.log('Stored file with CID:', mockCID);
     return mockCID;
+  } catch (error) {
+    console.error('File storage error:', error);
+    throw new Error('Failed to store file');
   }
 };
 

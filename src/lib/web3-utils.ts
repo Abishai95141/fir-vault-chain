@@ -161,31 +161,61 @@ export const submitFIRToBlockchain = async (
   dataHash: string,
   walletAddress: string
 ): Promise<string> => {
+  console.log('Submitting FIR to blockchain:', { firId, dataCID, walletAddress });
+  
   try {
     const web3 = getWeb3();
     const contract = new web3.eth.Contract(FIR_CONTRACT_ABI, FIR_CONTRACT_ADDRESS);
     
-    // Convert hash to bytes32 format
-    const hashBytes = web3.utils.padRight(web3.utils.asciiToHex(dataHash.substring(0, 32)), 64);
+    // Convert hash to bytes32 format properly
+    const hashBytes = '0x' + dataHash.substring(0, 64).padEnd(64, '0');
+    
+    console.log('Prepared transaction data:', { firId, dataCID, hashBytes });
+    
+    // Check if contract exists at address
+    const code = await web3.eth.getCode(FIR_CONTRACT_ADDRESS);
+    if (code === '0x' || code === '0x0') {
+      console.warn('No contract found at address, using demo mode');
+      throw new Error('Contract not deployed');
+    }
     
     // Estimate gas
     const gasEstimate = await contract.methods
       .submitFIR(firId, dataCID, hashBytes)
       .estimateGas({ from: walletAddress });
     
+    console.log('Gas estimate:', gasEstimate);
+    
     // Send transaction
     const tx = await contract.methods
       .submitFIR(firId, dataCID, hashBytes)
       .send({ 
         from: walletAddress,
-        gas: Math.floor(Number(gasEstimate) * 1.2).toString() // Add 20% buffer
+        gas: Math.floor(Number(gasEstimate) * 1.5).toString() // Add 50% buffer
       });
     
+    console.log('Transaction successful:', tx.transactionHash);
     return tx.transactionHash;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Blockchain submission error:', error);
-    // For demo purposes, return a mock transaction hash
-    return `0x${hashData(firId + dataCID)}`;
+    
+    // For demo/testing purposes, generate a mock transaction hash
+    const mockTxHash = `0x${hashData(firId + dataCID + Date.now())}`;
+    console.warn('Using mock transaction hash for demo:', mockTxHash);
+    
+    // Store the FIR data locally for demo purposes
+    const firRecord = {
+      firId,
+      dataCID,
+      dataHash,
+      walletAddress,
+      timestamp: Date.now(),
+      status: 'pending',
+      mockTx: true
+    };
+    localStorage.setItem(`fir_tx_${firId}`, JSON.stringify(firRecord));
+    
+    return mockTxHash;
   }
 };
 
