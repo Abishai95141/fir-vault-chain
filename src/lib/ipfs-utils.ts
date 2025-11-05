@@ -1,71 +1,72 @@
-import { create, IPFSHTTPClient } from 'ipfs-http-client';
-import { Buffer } from 'buffer';
+import { supabase } from '@/integrations/supabase/client';
 
-// Use public IPFS node (no authentication required)
-const IPFS_CONFIG = {
-  host: 'ipfs.io',
-  port: 443,
-  protocol: 'https' as const,
-};
-
-// Public IPFS gateway for reading
-const IPFS_GATEWAY = 'https://ipfs.io/ipfs/';
-
-let ipfsClient: IPFSHTTPClient | null = null;
-
-export const getIPFSClient = (): IPFSHTTPClient => {
-  if (!ipfsClient) {
-    try {
-      ipfsClient = create(IPFS_CONFIG);
-    } catch (error) {
-      console.error('IPFS client creation error:', error);
-      throw new Error('Failed to initialize IPFS client. Check configuration.');
-    }
-  }
-  return ipfsClient;
-};
+// Public IPFS gateway for reading (Pinata)
+const IPFS_GATEWAY = 'https://gateway.pinata.cloud/ipfs/';
 
 export const uploadToIPFS = async (data: any): Promise<string> => {
-  // For testing, use local storage simulation
-  // In production, you'd use a proper IPFS service with API keys
   try {
-    // Store data in localStorage with a unique key
-    const dataString = JSON.stringify(data);
-    const timestamp = Date.now();
-    const storageKey = `fir_data_${timestamp}`;
-    localStorage.setItem(storageKey, dataString);
+    console.log('Uploading data to IPFS via Pinata...');
     
-    // Generate a deterministic CID-like hash
-    const mockCID = `Qm${btoa(storageKey).substring(0, 44)}`;
-    console.log('Stored FIR data with CID:', mockCID);
-    return mockCID;
+    const { data: result, error } = await supabase.functions.invoke('upload-to-ipfs', {
+      body: {
+        data,
+        name: `FIR_${Date.now()}`
+      },
+    });
+
+    if (error) {
+      console.error('IPFS upload error:', error);
+      throw error;
+    }
+
+    if (!result?.cid) {
+      throw new Error('No CID returned from upload');
+    }
+
+    console.log('Successfully uploaded to IPFS, CID:', result.cid);
+    return result.cid;
   } catch (error) {
-    console.error('Storage error:', error);
-    throw new Error('Failed to store FIR data');
+    console.error('Failed to upload to IPFS:', error);
+    throw new Error('Failed to upload data to IPFS');
   }
 };
 
 export const uploadFileToIPFS = async (file: File): Promise<string> => {
   try {
-    // Convert file to base64 and store in localStorage
-    const reader = new FileReader();
-    const base64Promise = new Promise<string>((resolve, reject) => {
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
+    console.log('Uploading file to IPFS via Pinata:', file.name);
     
-    const base64Data = await base64Promise;
-    const timestamp = Date.now();
-    const storageKey = `fir_file_${timestamp}_${file.name}`;
-    localStorage.setItem(storageKey, base64Data);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    // Call edge function with FormData
+    const response = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/upload-to-ipfs`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: formData,
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.text();
+      console.error('File upload error:', error);
+      throw new Error(`File upload failed: ${error}`);
+    }
+
+    const result = await response.json();
     
-    const mockCID = `Qm${btoa(storageKey).substring(0, 40)}${file.name}`;
-    console.log('Stored file with CID:', mockCID);
-    return mockCID;
+    if (!result?.cid) {
+      throw new Error('No CID returned from file upload');
+    }
+
+    console.log('Successfully uploaded file to IPFS, CID:', result.cid);
+    return result.cid;
   } catch (error) {
-    console.error('File storage error:', error);
-    throw new Error('Failed to store file');
+    console.error('Failed to upload file to IPFS:', error);
+    throw new Error('Failed to upload file to IPFS');
   }
 };
 
@@ -76,24 +77,18 @@ export const uploadMultipleFilesToIPFS = async (files: File[]): Promise<string[]
 
 export const fetchFromIPFS = async (cid: string): Promise<any> => {
   try {
-    const client = getIPFSClient();
-    const chunks = [];
-    for await (const chunk of client.cat(cid)) {
-      chunks.push(chunk);
+    console.log('Fetching from IPFS via Pinata gateway:', cid);
+    const response = await fetch(`${IPFS_GATEWAY}${cid}`);
+    
+    if (!response.ok) {
+      throw new Error(`Gateway fetch failed: ${response.statusText}`);
     }
-    const data = Buffer.concat(chunks).toString();
-    return JSON.parse(data);
+    
+    const data = await response.json();
+    return data;
   } catch (error) {
     console.error('IPFS fetch error:', error);
-    // Fallback to HTTP gateway
-    try {
-      const response = await fetch(`${IPFS_GATEWAY}${cid}`);
-      if (!response.ok) throw new Error('Gateway fetch failed');
-      return await response.json();
-    } catch (gatewayError) {
-      console.error('Gateway fetch error:', gatewayError);
-      throw new Error('Failed to retrieve data from IPFS');
-    }
+    throw new Error('Failed to retrieve data from IPFS');
   }
 };
 
@@ -102,13 +97,7 @@ export const getIPFSGatewayUrl = (cid: string): string => {
 };
 
 export const pinToIPFS = async (cid: string): Promise<boolean> => {
-  try {
-    const client = getIPFSClient();
-    await client.pin.add(cid);
-    return true;
-  } catch (error) {
-    console.error('IPFS pinning error:', error);
-    // For demo, assume success
-    return true;
-  }
+  // Pinata automatically pins all uploaded content
+  console.log('Content is automatically pinned by Pinata:', cid);
+  return true;
 };
