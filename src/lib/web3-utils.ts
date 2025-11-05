@@ -58,12 +58,12 @@ export const FIR_CONTRACT_ABI = [
   }
 ] as const;
 
-// Configuration for testnet (Polygon Mumbai or Sepolia)
+// Configuration for testnet (Polygon Amoy)
 export const NETWORK_CONFIG = {
-  chainId: '0x13881', // Polygon Mumbai
-  chainName: 'Polygon Mumbai Testnet',
-  rpcUrl: 'https://rpc-mumbai.maticvigil.com',
-  blockExplorerUrl: 'https://mumbai.polygonscan.com',
+  chainId: '0x13882', // Polygon Amoy (80002)
+  chainName: 'Amoy',
+  rpcUrl: 'https://rpc-amoy.polygon.technology/',
+  blockExplorerUrl: 'https://amoy.polygonscan.com',
   nativeCurrency: {
     name: 'MATIC',
     symbol: 'MATIC',
@@ -71,8 +71,8 @@ export const NETWORK_CONFIG = {
   }
 };
 
-// Mock contract address (replace with actual deployed contract)
-export const FIR_CONTRACT_ADDRESS = '0x0000000000000000000000000000000000000000';
+// FIR Contract address on Polygon Amoy
+export const FIR_CONTRACT_ADDRESS = '0x8fd7C60e037BB9Ec865EC8c31ac3c61DB582a6dF';
 
 let web3Instance: Web3 | null = null;
 
