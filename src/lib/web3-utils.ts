@@ -73,7 +73,7 @@ export const NETWORK_CONFIG = {
 
 
 // FIR Contract address on Polygon Amoy
-export const FIR_CONTRACT_ADDRESS = '0x8fd7C60e037BB9Ec865EC8c31ac3c61DB582a6dF';
+export const FIR_CONTRACT_ADDRESS = '0x98feBB853C9B2c631a512171794a54AA69fe14cB';
 
 let web3Instance: Web3 | null = null;
 
