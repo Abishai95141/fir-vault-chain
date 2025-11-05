@@ -65,11 +65,12 @@ export const NETWORK_CONFIG = {
   rpcUrl: 'https://rpc-amoy.polygon.technology/',
   blockExplorerUrl: 'https://amoy.polygonscan.com',
   nativeCurrency: {
-    name: 'MATIC',
-    symbol: 'MATIC',
+    name: 'POL',
+    symbol: 'POL',
     decimals: 18
   }
 };
+
 
 // FIR Contract address on Polygon Amoy
 export const FIR_CONTRACT_ADDRESS = '0x8fd7C60e037BB9Ec865EC8c31ac3c61DB582a6dF';
