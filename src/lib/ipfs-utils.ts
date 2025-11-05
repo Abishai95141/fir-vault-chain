@@ -3,8 +3,8 @@ import { create, IPFSHTTPClient } from 'ipfs-http-client';
 import { Buffer } from 'buffer'; // <-- Add this import at the top
 
 // Use Infura IPFS gateway (replace with your project credentials)
-const PROJECT_ID = 'FIR'; // <-- This is the API Key / Project ID from the list
-const API_KEY_SECRET = '40879d2ea0884e3ea233a24c8211e5bc'; // <-- This is the secret from your last screenshot
+const PROJECT_ID = '40879d2ea0884e3ea233a24c8211e5bc'; // <-- This is the API Key / Project ID from the list
+const API_KEY_SECRET = 'JsBKAVNWhq5HfrUuuKGqaP45mHAAW48lP7sSwA5OC7ZAy0WxqUYtUg'; // <-- This is the secret from your last screenshot
 
 const IPFS_CONFIG = {
   host: 'ipfs.infura.io',
